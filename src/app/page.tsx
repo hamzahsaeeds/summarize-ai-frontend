@@ -1,3 +1,4 @@
+import { FeatureSection } from "@/components/custom/features-section";
 import { HeroSection } from "@/components/custom/hero-section";
 import { getStrapiURL } from "@/lib/utils";
 import qs from "qs";
@@ -28,6 +29,16 @@ const homePageQuery = qs.stringify({
   },
 });
 
+const blockComponents = {
+  "layout.hero-section": HeroSection,
+  "layout.features-section": FeatureSection,
+};
+
+function blockRenderer(block: any) {
+  const Component = blockComponents[block.__component as keyof typeof blockComponents];
+  return Component ? <Component key={block.id} data={block} /> : null;
+}
+
 async function getStrapiData(path: string) {
   const baseUrl = getStrapiURL();
 
@@ -44,12 +55,8 @@ async function getStrapiData(path: string) {
 
 export default async function Home() {
   const strapiData = await getStrapiData("/api/home-page");
-  const { blocks } = strapiData.data;
+  const { blocks } = strapiData?.data || [];
 
-  // console.dir(strapiData, { depth: null });
-  return (
-    <main>
-      <HeroSection data={blocks[0]} />
-    </main>
-  );
+  // console.dir(blocks, { depth: null });
+  return <main>{blocks.map(blockRenderer)}</main>;
 }
