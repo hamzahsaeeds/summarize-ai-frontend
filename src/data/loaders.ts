@@ -54,3 +54,18 @@ export async function getHomePageData() {
 
   return await fetchData(url.href);
 }
+
+export async function getGlobalData() {
+  const url = new URL("/api/global", baseUrl);
+
+  url.search = qs.stringify({
+    populate: [
+      "header.logoText",
+      "header.ctaButton",
+      "footer.logoText",
+      "footer.socialLink",
+    ],
+  });
+
+  return await fetchData(url.href);
+}
