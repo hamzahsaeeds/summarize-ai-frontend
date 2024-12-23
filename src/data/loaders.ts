@@ -69,3 +69,13 @@ export async function getGlobalData() {
 
   return await fetchData(url.href);
 }
+
+export async function getGlobalPageMetadata() {
+  const url = new URL("/api/global", baseUrl);
+
+  url.search = qs.stringify({
+    fields: ["siteName", "siteDescription"],
+  });
+
+  return await fetchData(url.href);
+}
