@@ -14,11 +14,23 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { registerUserAction } from "@/data/actions/auth-actions";
+import { useFormState } from "react-dom";
+
+const INITIAL_STATE = {
+  data: null,
+};
 
 export function SignupForm() {
+  const [formState, formAction] = useFormState(
+    registerUserAction,
+    INITIAL_STATE
+  );
+
+  // console.log("on client", formState);
+
   return (
     <div className="w-full max-w-md">
-      <form action={registerUserAction}>
+      <form action={formAction}>
         <Card>
           <CardHeader className="space-y-1">
             <CardTitle className="text-3xl font-bold">Sign Up</CardTitle>

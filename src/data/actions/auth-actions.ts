@@ -1,7 +1,7 @@
 "use server";
 
-export async function registerUserAction(formData: FormData) {
-  console.log("Hello From Register User Action");
+export async function registerUserAction(prevState: any, formData: FormData) {
+  // console.log("Hello From Register User Action");
 
   const fields = {
     username: formData.get("username"),
@@ -9,7 +9,10 @@ export async function registerUserAction(formData: FormData) {
     email: formData.get("email"),
   };
 
-  console.log("#############");
-  console.log(fields);
-  console.log("#############");
+  // console.log("on server", fields);
+
+  return {
+    ...prevState,
+    data: fields,
+  };
 }
