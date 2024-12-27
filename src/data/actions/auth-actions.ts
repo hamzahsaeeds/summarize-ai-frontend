@@ -1,5 +1,6 @@
 "use server";
 import { z } from "zod";
+import { registerUserService } from "../services/auth-service";
 
 const schemaRegister = z.object({
   username: z.string().min(3).max(20, {
@@ -33,8 +34,27 @@ export async function registerUserAction(prevState: any, formData: FormData) {
 
   // console.log("on server", validatedFields);
 
-  return {
-    ...prevState,
-    data: "ok",
-  };
+  const responseData = await registerUserService(validatedFields.data);
+
+  if (!responseData) {
+    return {
+      ...prevState,
+      strapiErrors: null,
+      zodErrors: null,
+      message: "Ops! Something went wrong. Please try again.",
+    };
+  }
+
+  if (responseData.error) {
+    return {
+      ...prevState,
+      strapiErrors: responseData.error,
+      zodErrors: null,
+      message: "Failed to Register.",
+    };
+  }
+
+  console.log("#############");
+  console.log("User Registered Successfully", responseData.jwt);
+  console.log("#############");
 }
