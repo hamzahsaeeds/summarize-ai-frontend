@@ -1,6 +1,16 @@
 "use server";
 import { z } from "zod";
 import { registerUserService } from "../services/auth-service";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+const config = {
+  maxAge: 60 * 60 * 24 * 7, // 1 week
+  path: "/",
+  domain: process.env.HOST ?? "localhost",
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+};
 
 const schemaRegister = z.object({
   username: z.string().min(3).max(20, {
@@ -54,7 +64,8 @@ export async function registerUserAction(prevState: any, formData: FormData) {
     };
   }
 
-  console.log("#############");
-  console.log("User Registered Successfully", responseData.jwt);
-  console.log("#############");
+  const cookieStore = await cookies();
+  cookieStore.set("jwt", responseData.jwt, config);
+
+  redirect("/dashboard");
 }
