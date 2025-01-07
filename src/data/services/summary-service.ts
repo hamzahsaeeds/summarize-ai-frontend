@@ -12,3 +12,4 @@ export async function generateSummaryService(videoId: string) {
     return { data: null, error: { message: "Unknown error" } };
   }
 }
+
