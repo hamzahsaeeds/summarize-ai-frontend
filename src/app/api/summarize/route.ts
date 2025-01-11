@@ -1,8 +1,5 @@
 import { getAuthToken } from "@/data/services/get-token";
 import { getUserMeLoader } from "@/data/services/get-user-me-loader";
-import { StringOutputParser } from "@langchain/core/output_parsers";
-import { PromptTemplate } from "@langchain/core/prompts";
-import { ChatOpenAI } from "@langchain/openai";
 import { NextRequest } from "next/server";
 
 const TEMPLATE = `
@@ -20,32 +17,39 @@ INSTRUCTIONS:
   Return possible and best recommended key words
 `;
 
-async function generateSummary(content: string, template: string) {
-  const prompt = PromptTemplate.fromTemplate(template);
+async function generateSummaryHuggingFace(content: string, template: string) {
+  const API_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn"; // Replace with desired model
+  const API_KEY = process.env.HUGGINGFACE_API_KEY;
 
-  const model = new ChatOpenAI({
-    openAIApiKey: process.env.OPENAI_API_KEY,
-    modelName: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
-    temperature: process.env.OPENAI_TEMPERATURE
-      ? parseFloat(process.env.OPENAI_TEMPERATURE)
-      : 0.7,
-    maxTokens: process.env.OPENAI_MAX_TOKENS
-      ? parseInt(process.env.OPENAI_MAX_TOKENS)
-      : 4000,
-  });
+  if (!API_KEY) {
+    throw new Error("Hugging Face API key is not set.");
+  }
 
-  const outputParser = new StringOutputParser();
-  const chain = prompt.pipe(model).pipe(outputParser);
+  const prompt = template.replace("{text}", content);
 
   try {
-    const summary = await chain.invoke({ text: content });
-    return summary;
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ inputs: prompt }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Hugging Face API error: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    if (!result || !result.length) {
+      throw new Error("No summary received from Hugging Face API.");
+    }
+
+    return result[0].summary_text || result[0]; // Adjust based on API response
   } catch (error) {
-    if (error instanceof Error)
-      return new Response(JSON.stringify({ error: error.message }));
-    return new Response(
-      JSON.stringify({ error: "Failed to generate summary." })
-    );
+    console.error("Error with Hugging Face API:", error);
+    throw new Error("Failed to generate summary using Hugging Face API.");
   }
 }
 
@@ -86,15 +90,17 @@ export async function POST(req: NextRequest) {
     return new Response(JSON.stringify({ error: "Unknown error" }));
   }
 
-  let summary: Awaited<ReturnType<typeof generateSummary>>;
+  let summary: Awaited<ReturnType<typeof generateSummaryHuggingFace>>;
 
   try {
-    summary = await generateSummary(transcriptData, TEMPLATE);
+    summary = await generateSummaryHuggingFace(transcriptData, TEMPLATE);
     return new Response(JSON.stringify({ data: summary, error: null }));
   } catch (error) {
     console.error("Error processing request:", error);
     if (error instanceof Error)
       return new Response(JSON.stringify({ error: error.message }));
-    return new Response(JSON.stringify({ error: "Error generating summary." }));
+    return new Response(
+      JSON.stringify({ error: "Error generating summary." })
+    );
   }
 }
